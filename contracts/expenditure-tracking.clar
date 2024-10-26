@@ -80,3 +80,34 @@
         ERR-NOT-AUTHORIZED
     )
 )
+
+(define-public (propose-expenditure 
+    (amount uint)
+    (category (string-ascii 64))
+    (recipient principal)
+    (description (string-ascii 256))
+)
+    (let (
+        (category-info (get-category-info category))
+        (nonce (var-get expenditure-nonce))
+    )
+    (asserts! (is-eq tx-sender contract-owner) ERR-NOT-AUTHORIZED)
+    (asserts! (get active category-info) ERR-INVALID-CATEGORY)
+    (asserts!
+        (<= (+ amount (get spent category-info)) (get allocated category-info))
+        ERR-INSUFFICIENT-FUNDS
+    )
+
+    (map-set expenditures nonce
+        (tuple
+            (amount amount)
+            (category category)
+            (recipient recipient)
+            (description description)
+            (approved false)
+        )
+    )
+    (var-set expenditure-nonce (+ nonce u1))
+    (ok nonce)
+    ))
+)
