@@ -64,3 +64,19 @@
         )
     ))
 )
+
+(define-public (add-spending-category (category (string-ascii 64)))
+    (if (is-eq tx-sender contract-owner)
+        (begin
+            (map-set spending-categories category
+                (tuple
+                    (allocated u0)
+                    (spent u0)
+                    (active true)
+                )
+            )
+            (ok true)
+        )
+        ERR-NOT-AUTHORIZED
+    )
+)
