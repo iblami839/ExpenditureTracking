@@ -81,7 +81,7 @@
     )
 )
 
-(define-public (propose-expenditure 
+(define-public (propose-expenditure
     (amount uint)
     (category (string-ascii 64))
     (recipient principal)
@@ -110,4 +110,36 @@
     (var-set expenditure-nonce (+ nonce u1))
     (ok nonce)
     ))
+)
+
+(define-public (approve-expenditure (id uint))
+    (let (
+        (exp (unwrap! (map-get? expenditures id) ERR-INVALID-CATEGORY))
+        (category-info (get-category-info (get category exp)))
+    )
+    (asserts! (is-eq tx-sender contract-owner) ERR-NOT-AUTHORIZED)
+
+    (try! (as-contract (stx-transfer?
+        (get amount exp)
+        tx-sender
+        (get recipient exp)
+    )))
+
+    (map-set expenditures id
+        (merge exp (tuple (approved true)))
+    )
+
+    (map-set spending-categories (get category exp)
+        (merge category-info
+            (tuple (spent (+ (get spent category-info) (get amount exp))))
+        )
+    )
+
+    (ok true)
+    ))
+)
+
+;; Getter for contract balance
+(define-read-only (get-balance)
+    (stx-get-balance (as-contract tx-sender))
 )
